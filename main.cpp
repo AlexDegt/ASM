@@ -27,7 +27,7 @@ class ReadFile
     ReadFile(size_t filesize, token * massptr);
     token * mass;
     token * fragmentation(char * str);
-    token * structinit(size_t massize);
+    //token * structinit(size_t massize);
     std::vector<char> filevec;
 
     char * convert(char * filename);
@@ -52,8 +52,7 @@ int main()
     //delete ptr;
     char s2[9] = "test.txt";
     token * mas = s.fragmentation(s.convert(s2));
-    //printf("%s\n", mas[0].tokens[1].c_str());
-    printf("%i\n", mas[0].line[0]);
+    printf("%s\n", mas[0].tokens[1].c_str());
     system("PAUSE");
     return 0;
 }
@@ -86,12 +85,16 @@ char * ReadFile::convert(char * filename)
 
 token * ReadFile::fragmentation(char * str)
 {
-    mass[0].line[0] = 1;
-    mass[0].tokens[0] = "1";
-    /*std::string letter;
+    /*mass[0].line[0] = 1;
+    mass[0].tokens[0] = '1';
+    mass[0].line.resize(2);
+    mass[0].tokens.resize(2);
+    mass[0].line[1] = 2;
+    mass[0].tokens[1] = '2';*/
+    std::string letter;
     std::string word;
     bool flag = false;
-    int wordcount = -1;
+    size_t wordcount = 0;
     int linenum = 1;
     int i = 0;
     size_t currsize = 0;
@@ -121,8 +124,15 @@ token * ReadFile::fragmentation(char * str)
                 }
             if ((str[i] != 32) && (str[i] != 9) && (!flag))
             {
-                mass[0].tokens[++wordcount] = str[i];
+                if (mass[0].tokens.capacity() == wordcount)
+                    {
+                        mass[0].line.resize(wordcount+1);      //wordcount уменьшено на 1 только в этом ифе
+                        mass[0].tokens.resize(wordcount+1);
+                    }
+                mass[0].tokens[wordcount++] = str[i];
                 flag = true;
+                if (str[i+1] == ';')
+                    mass[0].line[wordcount-1] = linenum;
             }
             currsize++;
             i++;
@@ -130,5 +140,5 @@ token * ReadFile::fragmentation(char * str)
         currsize++;
         i++;
     }
-    return mass;*/
+    return mass;
 }
