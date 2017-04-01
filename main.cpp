@@ -25,7 +25,7 @@
     printf("\n***************\n");\
     getch();\
     exit(1);
-using namespace std;
+//using namespace std;
 
 struct token{
     std::vector<std::string> tokens;
@@ -40,6 +40,17 @@ struct commlab{
     long int code;
     char id;
     commlab():
+        code(),
+        id()
+        {}
+};
+
+struct cmdargid{
+    long int code;
+    long int argcode;
+    char id;
+    cmdargid():
+        argcode(),
         code(),
         id()
         {}
@@ -103,7 +114,9 @@ class semanalysis
     public:
     void analysis(std::vector<commlab> mass, std::vector<label> masslabel,std::vector<std::string> cmdnoarg,std::vector<std::string> cmdarglab,std::vector<std::string> cmdargnum,std::vector<std::string> cmdargrgst,std::vector<std::string> rgst);
     void checklabel(std::vector<label> masslabel);
-    void output(char * filename, std::vector<commlab> mass);
+    void output(char * filename, std::vector<cmdargid> mass);
+    std::vector<label> last_mass_create(std::vector<commlab> mass, std::vector<label> masslabel);
+    char * convert(int num);
     bool is_noarg(int code, std::vector<std::string> cmdnoarg);
     bool is_arglab(int code, std::vector<std::string> cmdarglab);
     bool is_argnum(int code, std::vector<std::string> cmdargnum);
@@ -112,8 +125,10 @@ class semanalysis
     std::vector<label> masslabel;
     std::vector<label> label1;
     std::vector<label> label2;
+    std::vector<cmdargid> last_mass;
     std::vector<int> prevnum;
     semanalysis():
+        last_mass(),
         prevnum(),
         masslabel(),
         label1(),
@@ -133,8 +148,8 @@ int main()
     std::vector<label> labels = s.masslabel;
     com.translat(mas, labels);
     lab.analysis(com.masscommlab,s.masslabel,com.cmdnoarg,com.cmdarglab,com.cmdargnum, com.cmdargrgst, com.rgst);
-    lab.checklabel(s.masslabel);
-    lab.output("ASM.txt", com.masscommlab);
+    lab.checklabel(lab.last_mass_create(com.masscommlab, s.masslabel));
+    lab.output("ASM.txt", lab.last_mass);
     system("PAUSE");
     return 0;
 }
@@ -159,11 +174,19 @@ void translation::commlabinit()
     cmdnoarg.push_back("cos");
     cmdnoarg.push_back("sqrt");
     cmdnoarg.push_back("ret");
+    cmdnoarg.push_back("inc");
+    cmdnoarg.push_back("dec");
     cmdarglab.push_back("jmp");
+    cmdarglab.push_back("jmp_m");  // top>down
+    cmdarglab.push_back("jmp_l");  // top<down
+    cmdarglab.push_back("jmp_e");  //top == down
     cmdarglab.push_back("call");
+    cmdarglab.push_back("call_m");
+    cmdarglab.push_back("call_l");
+    cmdarglab.push_back("call_e");
     cmdargnum.push_back("push");
-    cmdargrgst.push_back("push");
-    cmdargrgst.push_back("pop");
+    cmdargrgst.push_back("pop_rg");
+    cmdargrgst.push_back("push_rg");
     rgst.push_back("ax");
     rgst.push_back("bx");
     rgst.push_back("cx");
@@ -236,7 +259,7 @@ token * ReadFile::fragmentation(char * str)
                     label st1;
                     codeoflab++;
                     st1.labcode = codeoflab;
-                    st1.labnum = tokennum;
+                    //st1.labnum = tokennum;
                     numoflab++;
                     st1.labstr = slovo;
                     masslabel.push_back(st1);
@@ -267,7 +290,7 @@ token * ReadFile::fragmentation(char * str)
                             label st1;
                             codeoflab++;
                             st1.labcode = codeoflab;
-                            st1.labnum = tokennum;
+                            //st1.labnum = tokennum;
                             numoflab++;
                             st1.labstr = slovo;
                             masslabel.push_back(st1);
@@ -402,9 +425,9 @@ void translation::translat(token * mass, std::vector<label> masslabel)
         flag = false;
         flag = is_number(mass[0].tokens[i], mass[0].line[i]);
         if (!flag) flag = checkmass(mass[0].tokens[i], mass[0].line[i], cmdnoarg, CODENOARG, 'C');
+        if (!flag) flag = checkmass(mass[0].tokens[i], mass[0].line[i], cmdargrgst, CODEARGRGST, 'C');
         if (!flag) flag = checkmass(mass[0].tokens[i], mass[0].line[i], cmdarglab, CODEARGLAB, 'C');
         if (!flag) flag = checkmass(mass[0].tokens[i], mass[0].line[i], cmdargnum, CODEARGNUM, 'C');
-        if (!flag) flag = checkmass(mass[0].tokens[i], mass[0].line[i], cmdargrgst, CODEARGRGST, 'C');
         if (!flag) flag = checkmass(mass[0].tokens[i], mass[0].line[i], rgst, CODERGST, 'R');
         if (!flag) flag = checkmasslab(mass[0].tokens[i], mass[0].line[i], masslabel);
         if (!flag)
@@ -415,6 +438,11 @@ void translation::translat(token * mass, std::vector<label> masslabel)
             exit(1);
         }
     }
+    for (int i = 0; i < mass[0].tokens.size(); i++)
+    {
+        printf("mass[0].tokens[%i] = %s\n",i, mass[0].tokens[i].c_str());
+    }
+
     //printf("END OF TRANSLATION\n****************************\n");
 }
 
@@ -469,6 +497,7 @@ bool semanalysis::is_argrgst(int code, std::vector<std::string> cmdargrgst)
     size_t size_argrgst = cmdargrgst.size();
     for (int i = 0; i < size_argrgst; i++)
     {
+        printf("code = %i   CODEARGRGST+%i = %i\n", code, i, CODEARGRGST+i);
         if (code == CODEARGRGST+i)
         {
             flag = true;
@@ -542,6 +571,8 @@ void semanalysis::analysis(std::vector<commlab> mass, std::vector<label> masslab
                 ERRORPRINT("You try to use function as an argument")
             }
         }
+
+        //printf("mass[%i].id = %c   flag_argrgst = %i   flag = %i\n", i, mass[i].id, flag_argrgst, flag);
         if ((mass[i].id == 'C') && (flag_arglab || flag_argnum || flag_argrgst) && (!flag))
         {
             if (size_mass-1 == i)
@@ -562,7 +593,7 @@ void semanalysis::analysis(std::vector<commlab> mass, std::vector<label> masslab
         {
             if (flag)
             {
-                ERRORPRINT("You try to use wrong label as an argument")
+                ERRORPRINT("You try to use wrong label as an argument or you try to use label after 'push'")
             }
             else
                 flag = false;
@@ -584,13 +615,86 @@ void semanalysis::analysis(std::vector<commlab> mass, std::vector<label> masslab
             }
         }
     i++;
+    printf("flag = %i for mass[i].code = %i\n", flag, mass[i].code, i);
     }
     int sizem = masslabel.size();
-    //printf("*********************\n");
-    /*for (int k = 0; k < sizem; k++)
+}
+
+std::vector<label> semanalysis::last_mass_create(std::vector<commlab> mass, std::vector<label> masslabel)
+{
+    int iter = 1;
+    int iter_lab = 0;
+    size_t size_mass = mass.size();
+    for (int i = 0; i < size_mass; i++)
     {
-        printf("label[%i]: %i \n", k, masslabel[k].labcode);
+        bool is_lab = is_label1(mass[i].code, masslabel);
+        cmdargid st;
+        //printf("mass[%i].code = %i   iter = %i\n", i, mass[i].code, iter);
+        //printf("mass[%i].code = %i   mass[%i].id = %c\n", i, mass[i].code, i, mass[i].id);
+        if ((mass[i].code >= CODENOARG) && (mass[i].code < CODEARGLAB) && (mass[i].id == 'C'))
+        {
+            st.code = mass[i].code;
+            st.id = mass[i].id;
+            st.argcode = 0;
+            last_mass.push_back(st);
+            iter++;
+        }
+        if ((mass[i].code >= CODEARGLAB) && (mass[i].code < CODEARGNUM) && (mass[i].id == 'C'))
+        {
+            st.code = mass[i].code;
+            if (is_lab) st.id = 'L';
+            //else st.id = 'K';
+            last_mass.push_back(st);
+        }
+        if ((mass[i].code >= CODEARGNUM) && (mass[i].code < CODEARGRGST) && (mass[i].id == 'C'))
+        {
+            st.code = mass[i].code;
+            st.id = 'N';
+            last_mass.push_back(st);
+        }
+        if ((mass[i].code >= CODEARGRGST) && (mass[i].code < CODERGST) && (mass[i].id == 'C'))
+        {
+            //printf("mass[%i].id = %c\n", i, mass[i].id);
+            st.code = mass[i].code;
+            st.id = 'R';
+            last_mass.push_back(st);
+        }
+        if ((mass[i].code >= CODERGST) && (mass[i].code <= CODELABEL) && (mass[i].id == 'R'))
+        {
+            last_mass[last_mass.size()-1].argcode = mass[i].code;
+            last_mass[last_mass.size()-1].id = mass[i].id;
+            iter++;
+        }
+        if (mass[i].id == 'N')
+        {
+            last_mass[last_mass.size()-1].argcode = mass[i].code;
+            iter++;
+        }
+        if ((mass[i].id == 'L') || (mass[i].id == 'K'))
+        {
+            if (!is_lab)
+                masslabel[iter_lab].labnum = iter;
+            iter_lab++;
+            /*printf("iter_lab = %i\n", iter_lab);
+            printf("iter = %i\n", iter);*/
+            if (mass[i].id == 'L')
+            {
+                last_mass[last_mass.size()-1].id = mass[i].id;
+                iter++;
+            }
+        }
+        //printf("last_mass[%i].code = %i   iter = %i\n",i,last_mass[i].code, iter);
+    }
+    /*for (int i = 0; i < masslabel.size(); i++)
+    {
+        printf("masslabel[%i].labnum = %i\n", i, masslabel[i].labnum);
     }*/
+    printf("\n\n");
+    for (int i = 0; i < last_mass.size(); i++)
+    {
+        printf("last_mass[%i].code = %i   last_mass[%i].argcode = %i   last_mass[%i].id = %c\n",i, last_mass[i].code,i, last_mass[i].argcode,i,last_mass[i].id);
+    }
+    return masslabel;
 }
 
 void semanalysis::checklabel(std::vector<label> masslabel)
@@ -603,6 +707,10 @@ void semanalysis::checklabel(std::vector<label> masslabel)
         else
             label1.push_back(masslabel[i]);
     }
+    /*for (int x = 0; x < label1.size(); x++)
+    {
+        printf("label1[%i].labnum: %i\n", x, label1[x].labnum);
+    }*/
     size_t size_label1 = label1.size();
     size_t size_label2 = label2.size();
     for (size_t i = 0; i < size_label2; i++)
@@ -639,54 +747,65 @@ void semanalysis::checklabel(std::vector<label> masslabel)
     }
 }
 
-void semanalysis::output(char * filename, std::vector<commlab> mass)
+void semanalysis::output(char * filename, std::vector<cmdargid> mass)
 {
     if(filename == NULL)
     {
         ERRORPRINT("Error open file")
     }
-    /*for (int x = 0; x < label2.size(); x++)
+    /*for (int x = 0; x < label1.size(); x++)
     {
-        printf("label2[%i].prevnum: %i\n", x, label2[x].prevnum);
+        printf("label1[%i].labnum: %i\n", x, label1[x].labnum);
     }*/
-    FILE * f = fopen(filename,"wb");
+    FILE * f = fopen(filename,"w");
     size_t size_mass = mass.size();
     int iter = 0;
     for (size_t i = 0; i < size_mass; i++)
     {
         if (mass[i].id != 'K')
         {
-            int x = mass[i].code;
-            size_t length_str = 0;
-            while (x)
+            if (mass[i].id != 'L')
             {
-                x = x / 10;
-                length_str++;
+                //str[length_str+1] = '\0';
+                fprintf(f, convert(mass[i].code));
+                fprintf(f," ");
+                fprintf(f, convert(mass[i].argcode));
+                fprintf(f," ");
             }
-            char str[length_str];
-            char str_id[1];
+            char str_id[2];
             str_id[0] = mass[i].id;
-            itoa(mass[i].code, str, 10);
-            fwrite(str, length_str, 1, f);
-            fwrite(" ", 1, 1, f);
-            fwrite(str_id, 1, 1, f);
+            str_id[1] = '\0';
+            if (mass[i].id != 'L')
+                fprintf(f, str_id);
             if (mass[i].id == 'L')
             {
-                fwrite(" ", 1, 1, f);
-                int jmp_num = label1[label2[iter].prevnum].labnum - label2[iter].prevnum+1;
+                //printf("label1[label2[iter].prevnum].labnum = %i\n", /*label1[*/label2[iter].prevnum/*].labnum*/);
+                int jmp_num = label1[label2[iter].prevnum].labnum;
                 int y = jmp_num;
-                size_t length_str1 = 0;
-                while (y)
-                {
-                    y = y / 10;
-                    length_str1++;
-                }
-                char str1[length_str1];
-                itoa(jmp_num, str1, 10);
-                fwrite(str1, length_str1, 1, f);
+                fprintf(f, convert(mass[i].code));
+                fprintf(f," ");
+                //str1[length_str1+1] = '\0';
+                fprintf(f, convert(jmp_num));
+                fprintf(f, " ");
                 iter++;
             }
-            fprintf (f, "\r\n");
+            if (mass[i].id == 'L')
+                fprintf(f, str_id);
+            fprintf (f, " ");
         }
     }
+}
+
+char * semanalysis::convert(int num)
+{
+    int x = num;
+    size_t length_str = 0;
+    while (x)
+    {
+        x = x / 10;
+        length_str++;
+    }
+    char str[length_str];
+    itoa(num, str, 10);
+    return str;
 }
