@@ -1,0 +1,21 @@
+push 7
+dec
+push 3
+pop_rg cx
+push 3
+pop_rg bx
+push 0
+1:
+inc
+pop_rg ax
+push_rg bx
+push_rg cx
+mul
+pop_rg bx
+push_rg ax
+call_e :1
+ret
+pop
+pop
+push_rg bx
+out
