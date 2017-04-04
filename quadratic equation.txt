@@ -1,0 +1,38 @@
+push 1    pop_rg ax   push_rg ax
+push 2    pop_rg bx
+push -3
+
+push -4
+mul
+mul
+push_rg bx
+push_rg bx
+mul
+add
+sqrt
+pop_rg dx
+push -1
+push_rg bx
+mul
+pop_rg bx
+push_rg bx
+push_rg dx
+add
+pop_rg cx
+push 2
+push_rg ax
+mul
+pop_rg ax
+push_rg ax
+push_rg cx
+div
+push_rg ax
+push_rg dx
+push_rg bx
+sub
+div
+out
+
+
+
+

@@ -12,17 +12,12 @@
 #include <conio.h>
 #include <math.h>
 
-#define CODENOARG 50
-#define CODEARGLAB 100
-#define CODEARGNUM 150
-#define CODEARGRGST 200
-#define CODERGST 250
-#define CODELABEL 299
-#define NOARGSIZE 11
-#define ARGLABSIZE 2
-#define ARGNUMSIZE 1
-#define ARGRGSTSIZE 2
-#define RGSTSIZE 4
+const int CODENOARG = 50;
+const int CODEARGLAB = 100;
+const int CODEARGNUM = 150;
+const int CODEARGRGST = 200;
+const int CODERGST = 250;
+const int CODELABEL = 299;
 
 #define ERRORPRINT(a)\
     printf("\n***************\n");\
@@ -39,51 +34,14 @@ class stack
         stack();
         explicit stack(size_t capacit);
         ~stack();
-        void push(int value);
-        void push_rgst(int value, int code_rgst);
-        int pop();
-        int pop_stay();
-        void empty();
         bool is_empty();
         size_t size();
-        void out();
-        void in();
-        void sub();
-        void mul();
-        void div();
+        void empty();
         void dump();
-        void add();
-        void sin_int();
-        void cos_int();
-        void sqrt_int();
-        int ax;
-        int bx;
-        int cx;
-        int dx;
-    private:
+        bool ok() const;
         int * data;
         size_t size_val;
         size_t capacity_val;
-        bool ok() const;
-};
-
-class stack_func{
-    public:
-        stack_func();
-        explicit stack_func(size_t capacit);
-        ~stack_func();
-        void push(int value);
-        int pop();
-        int pop_stay();
-        void dump();
-        void empty();
-        bool is_empty();
-        size_t size();
-    private:
-        int * data;
-        size_t size_val;
-        size_t capacity_val;
-        bool ok() const;
 };
 
 struct cmd_mass_struct{
@@ -105,10 +63,9 @@ class ReadFile
     ReadFile():
         cmd_mass()
         {}
-    //void run
 };
 
-class class_RUN
+class CPU
 {
     public:
     void run(std::vector<cmd_mass_struct> cmd_mass);
@@ -116,19 +73,38 @@ class class_RUN
     void cmd_case_R(cmd_mass_struct cmd_mass_i);
     void cmd_case_C(cmd_mass_struct cmd_mass_i);
     int cmd_case_L(cmd_mass_struct cmd_mass_i);
+    void push(int value);
+    void push_func(int value);
+    void push_rgst(int value, int code_rgst);
+    int pop();
+    int pop_func();
+    int pop_stay();
+    void out();
+    void in();
+    void sub();
+    void mul();
+    void div();
+    void add();
+    void sin_int();
+    void cos_int();
+    void sqrt_int();
+    int ax;
+    int bx;
+    int cx;
+    int dx;
     stack stack_;
-    stack_func stack_func_;
-    class_RUN():
+    stack stack_func;
+    CPU():
         stack_(1),
-        stack_func_(1)
+        stack_func(1)
         {}
 };
 
 int main()
 {
-    class_RUN r;
+    CPU r;
     ReadFile file;
-    file.reading("ASM.txt");
+    file.reading("C:/Users/Alex/Desktop/Codes/Assembler/ASM.txt");
     r.run(file.cmd_mass);
     system("PAUSE");
     return 0;
@@ -160,7 +136,7 @@ void ReadFile::reading(char * filename)
     }*/
 }
 
-void class_RUN::run(std::vector<cmd_mass_struct> cmd_mass)
+void CPU::run(std::vector<cmd_mass_struct> cmd_mass)
 {
     size_t size_mass = cmd_mass.size();
     for (int i = 0; i < size_mass; i++)
@@ -193,16 +169,16 @@ void class_RUN::run(std::vector<cmd_mass_struct> cmd_mass)
     }
 }
 
-void class_RUN::cmd_case_N(cmd_mass_struct cmd_mass_i)
+void CPU::cmd_case_N(cmd_mass_struct cmd_mass_i)
 {
     switch (cmd_mass_i.code)
     default:
     {
-        stack_.push(cmd_mass_i.argcode);
+        push(cmd_mass_i.argcode);
     }
 }
 
-int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
+int CPU::cmd_case_L(cmd_mass_struct cmd_mass_i)
 {
     switch (cmd_mass_i.code)
     {
@@ -212,10 +188,10 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
         }
         case CODEARGLAB+1:
         {
-            int top = stack_.pop();
-            int down = stack_.pop();
-            stack_.push(down);
-            stack_.push(top);
+            int top = pop();
+            int down = pop();
+            push(down);
+            push(top);
             if (top > down)
                 return -2;
             else
@@ -223,10 +199,10 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
         }
         case CODEARGLAB+2:
         {
-            int top = stack_.pop();
-            int down = stack_.pop();
-            stack_.push(down);
-            stack_.push(top);
+            int top = pop();
+            int down = pop();
+            push(down);
+            push(top);
             if (top < down)
                 return -2;
             else
@@ -234,10 +210,10 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
         }
         case CODEARGLAB+3:
         {
-            int top = stack_.pop();
-            int down = stack_.pop();
-            stack_.push(down);
-            stack_.push(top);
+            int top = pop();
+            int down = pop();
+            push(down);
+            push(top);
             if (top == down)
                 return -2;
             else
@@ -245,18 +221,18 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
         }
         case CODEARGLAB+4:
         {
-            stack_func_.push(cmd_mass_i.code);
+            push_func(cmd_mass_i.code);
             return cmd_mass_i.argcode-2;
         }
         case CODEARGLAB+5:
         {
-            int top = stack_.pop();
-            int down = stack_.pop();
-            stack_.push(down);
-            stack_.push(top);
+            int top = pop();
+            int down = pop();
+            push(down);
+            push(top);
             if (top > down)
             {
-                stack_func_.push(cmd_mass_i.code);
+                push_func(cmd_mass_i.code);
                 return -2;
             }
             else
@@ -264,13 +240,13 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
         }
         case CODEARGLAB+6:
         {
-            int top = stack_.pop();
-            int down = stack_.pop();
-            stack_.push(down);
-            stack_.push(top);
+            int top = pop();
+            int down = pop();
+            push(down);
+            push(top);
             if (top < down)
             {
-                stack_func_.push(cmd_mass_i.code);
+                push_func(cmd_mass_i.code);
                 return -2;
             }
             else
@@ -278,13 +254,13 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
         }
         case CODEARGLAB+7:
         {
-            int top = stack_.pop();
-            int down = stack_.pop();
-            stack_.push(down);
-            stack_.push(top);
+            int top = pop();
+            int down = pop();
+            push(down);
+            push(top);
             if (top == down)
             {
-                stack_func_.push(cmd_mass_i.code);
+                push_func(cmd_mass_i.code);
                 return -2;
             }
             else
@@ -293,7 +269,7 @@ int class_RUN::cmd_case_L(cmd_mass_struct cmd_mass_i)
     }
 }
 
-void class_RUN::cmd_case_R(cmd_mass_struct cmd_mass_i)
+void CPU::cmd_case_R(cmd_mass_struct cmd_mass_i)
 {
     switch (cmd_mass_i.code)
     {
@@ -303,22 +279,22 @@ void class_RUN::cmd_case_R(cmd_mass_struct cmd_mass_i)
             {
                 case CODERGST:
                 {
-                    stack_.ax = stack_.pop();
+                    ax = pop();
                     break;
                 }
                 case CODERGST+1:
                 {
-                    stack_.bx = stack_.pop();
+                    bx = pop();
                     break;
                 }
                 case CODERGST+2:
                 {
-                    stack_.cx = stack_.pop();
+                    cx = pop();
                     break;
                 }
                 case CODERGST+3:
                 {
-                    stack_.dx = stack_.pop();
+                    dx = pop();
                     break;
                 }
             }
@@ -330,22 +306,22 @@ void class_RUN::cmd_case_R(cmd_mass_struct cmd_mass_i)
             {
                 case CODERGST:
                 {
-                    stack_.push(stack_.ax);
+                    push(ax);
                     break;
                 }
                 case CODERGST+1:
                 {
-                    stack_.push(stack_.bx);
+                    push(bx);
                     break;
                 }
                 case CODERGST+2:
                 {
-                    stack_.push(stack_.cx);
+                    push(cx);
                     break;
                 }
                 case CODERGST+3:
                 {
-                    stack_.push(stack_.dx);
+                    push(dx);
                     break;
                 }
             }
@@ -354,87 +330,82 @@ void class_RUN::cmd_case_R(cmd_mass_struct cmd_mass_i)
     }
 }
 
-void class_RUN::cmd_case_C(cmd_mass_struct cmd_mass_i)
+void CPU::cmd_case_C(cmd_mass_struct cmd_mass_i)
 {
     switch (cmd_mass_i.code)
     {
         case CODENOARG:
         {
-            int x = stack_.pop();
+            int x = pop();
             break;
         }
         case CODENOARG+1:
         {
-            stack_.out();
+            out();
             break;
         }
         case CODENOARG+2:
         {
-            stack_.in();
+            in();
             break;
         }
         case CODENOARG+3:
         {
-            stack_.sub();
+            sub();
             break;
         }
         case CODENOARG+4:
         {
-            stack_.mul();
+            mul();
             break;
         }
         case CODENOARG+5:
         {
-            stack_.div();
+            div();
             break;
         }
         case CODENOARG+6:
         {
-            stack_.add();
+            add();
             break;
         }
         case CODENOARG+7:
         {
-            stack_.sin_int();
+            sin_int();
             break;
         }
         case CODENOARG+8:
         {
-            stack_.cos_int();
+            cos_int();
             break;
         }
         case CODENOARG+9:
         {
-            stack_.sqrt_int();
+            sqrt_int();
             break;
         }
         case CODENOARG+10:  //ret()
         {
             //printf("@@@@@@@@@@@@\n");
-            stack_func_.pop();
+            pop_func();
             break;
         }
         case CODENOARG+11:
         {
-            int x = stack_.pop();
-            stack_.push(++x);
+            int x = pop();
+            push(++x);
             break;
         }
         case CODENOARG+12:
         {
-            int x = stack_.pop();
-            stack_.push(--x);
+            int x = pop();
+            push(--x);
             break;
         }
     }
 }
 
 bool stack::ok() const
-{
-    return (this && (data && capacity_val && size_val <= capacity_val));
-}
-
-bool stack_func::ok() const
 {
     return (this && (data && capacity_val && size_val <= capacity_val));
 }
@@ -446,20 +417,6 @@ stack::stack(size_t capacit):
         {}
 
 stack::~stack()
-{
-    delete data;
-    data = NULL;
-    size_val = 0;
-    capacity_val = 0;
-}
-
-stack_func::stack_func(size_t capacit):
-        data(new(std::nothrow)int[capacit]),
-        capacity_val(capacit),
-        size_val(0)
-        {}
-
-stack_func::~stack_func()
 {
     delete data;
     data = NULL;
@@ -480,52 +437,39 @@ size_t stack::size()
     }
 }
 
-size_t stack_func::size()
+void CPU::push(int value)
 {
-    if (ok())
+    if (stack_.ok())
     {
-        return size_val;
+        if (stack_.size_val >= stack_.capacity_val)
+            stack_.data = (int*) realloc(stack_.data,(++stack_.capacity_val)*sizeof(int));
+        stack_.data[stack_.size_val++] = value;
     }
     else
     {
-        dump();
-        ERRORPRINT("error at the stage of using 'size()' in stack_func\n");
-    }
-}
-
-void stack::push(int value)
-{
-    if (ok())
-    {
-        if (size_val >= capacity_val)
-            data = (int*) realloc(data,(++capacity_val)*sizeof(int));
-        data[size_val++] = value;
-    }
-    else
-    {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using 'push()' in stack\n");
     }
 }
 
-void stack_func::push(int value)
+void CPU::push_func(int value)
 {
-    if (ok())
+    if (stack_func.ok())
     {
-        if (size_val >= capacity_val)
-            data = (int*) realloc(data,(++capacity_val)*sizeof(int));
-        data[size_val++] = value;
+        if (stack_func.size_val >= stack_func.capacity_val)
+            stack_func.data = (int*) realloc(stack_func.data,(++stack_func.capacity_val)*sizeof(int));
+        stack_func.data[stack_func.size_val++] = value;
     }
     else
     {
-        dump();
+        stack_func.dump();
         ERRORPRINT("error at the stage of using 'push()' in stack_func\n");
     }
 }
 
-void stack::push_rgst(int value, int code_rgst)
+void CPU::push_rgst(int value, int code_rgst)
 {
-    if (ok())
+    if (stack_.ok())
     {
         switch (code_rgst)
         {
@@ -549,97 +493,75 @@ void stack::push_rgst(int value, int code_rgst)
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using 'push_rgst()' in stack\n");
     }
 }
 
-int stack::pop()
+int CPU::pop()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (size_val)
+        if (stack_.size_val)
         {
-            int curr_size = size_val;
-            size_val--;
-            return data[curr_size-1];
+            int curr_size = stack_.size_val;
+            stack_.size_val--;
+            return stack_.data[curr_size-1];
         }
         else
         {
-            dump();
+            stack_.dump();
             ERRORPRINT("You can`t use 'pop' if stack is empty");
         }
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using 'pop()' in stack");
     }
 }
 
-int stack_func::pop()
+int CPU::pop_func()
 {
-    if (ok())
+    if (stack_func.ok())
     {
-        if (size_val)
+        if (stack_func.size_val)
         {
-            int curr_size = size_val;
-            size_val--;
-            return data[curr_size-1];
+            int curr_size = stack_func.size_val;
+            stack_func.size_val--;
+            return stack_func.data[curr_size-1];
         }
         else
         {
-            dump();
+            stack_func.dump();
             ERRORPRINT("You can`t use 'pop' if stack_func is empty");
         }
     }
     else
     {
-        dump();
+        stack_func.dump();
         ERRORPRINT("error at the stage of using 'pop()' in stack_func");
     }
 }
 
-int stack_func::pop_stay()
+int CPU::pop_stay()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (size_val)
+        if (stack_.size_val)
         {
-            int curr_size = size_val;
-            return data[curr_size];
+            int curr_size = stack_.size_val;
+            return stack_.data[curr_size];
         }
         else
         {
-            dump();
+            stack_.dump();
             ERRORPRINT("You can`t use 'pop' if stack_func is empty");
         }
     }
     else
     {
-        dump();
-        ERRORPRINT("error at the stage of using 'pop()' in stack_func");
-    }
-}
-
-int stack::pop_stay()
-{
-    if (ok())
-    {
-        if (size_val)
-        {
-            int curr_size = size_val;
-            return data[curr_size];
-        }
-        else
-        {
-            dump();
-            ERRORPRINT("You can`t use 'pop' if stack_func is empty");
-        }
-    }
-    else
-    {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using 'pop()' in stack_func");
     }
 }
@@ -659,32 +581,7 @@ void stack::empty()
     }
 }
 
-
-void stack_func::empty()
-{
-    if (ok())
-    {
-        for (size_t i = 0; i < size_val; i++)
-            data[i] = 0;
-        size_val = 0;
-    }
-    else
-    {
-        dump();
-        ERRORPRINT("error at the stage of using 'empty()' in stack_func");
-    }
-}
-
 void stack::dump()
-{
-    printf("\n");
-    for (size_t i = 0; i < size_val; i++)
-        printf("%i: %i\n",i, data[i]);
-    printf("size: %i\n", size_val);
-    printf("capacity: %i\n", capacity_val);
-}
-
-void stack_func::dump()
 {
     printf("\n");
     for (size_t i = 0; i < size_val; i++)
@@ -709,25 +606,9 @@ bool stack::is_empty()
     }
 }
 
-bool stack_func::is_empty()
+void CPU::in()
 {
-    if (ok())
-    {
-        if (!size_val)
-            return 1;
-        else
-            return 0;
-    }
-    else
-    {
-        dump();
-        ERRORPRINT("error at the stage of using 'empty()' in stack_func");
-    }
-}
-
-void stack::in()
-{
-    if (ok())
+    if (stack_.ok())
     {
         int number;
         scanf("%i", &number);
@@ -735,16 +616,16 @@ void stack::in()
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using in()");
     }
 }
 
-void stack::sub()
+void CPU::sub()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (size_val>=2)
+        if (stack_.size_val>=2)
         {
             int top = pop();
             int down = pop();
@@ -752,22 +633,22 @@ void stack::sub()
         }
         else
         {
-            dump();
+            stack_.dump();
             ERRORPRINT("You need more elements at stack to use 'sub'");
         }
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using sub()");
     }
 }
 
-void stack::mul()
+void CPU::mul()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (size_val>=2)
+        if (stack_.size_val>=2)
         {
             int top = pop();
             int down = pop();
@@ -775,22 +656,22 @@ void stack::mul()
         }
         else
         {
-            dump();
+            stack_.dump();
             ERRORPRINT("You need more elements at stack to use 'mul'");
         }
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using mul()");
     }
 }
 
-void stack::add()
+void CPU::add()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (size_val>=2)
+        if (stack_.size_val>=2)
         {
             int top = pop();
             int down = pop();
@@ -798,95 +679,94 @@ void stack::add()
         }
         else
         {
-            dump();
+            stack_.dump();
             ERRORPRINT("You need more elements at stack to use 'add'");
         }
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using add()");
     }
 }
 
-
-void stack::div()
+void CPU::div()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (size_val>=2)
+        if (stack_.size_val>=2)
         {
             int top = pop();
             int down = pop();
-            push(top/down);
+            push((int)(top/down));
         }
         else
         {
-            dump();
+            stack_.dump();
             ERRORPRINT("You need more elements at stack to use 'div'");
         }
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using div()");
     }
 }
 
-void stack::out()
+void CPU::out()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (!is_empty())
-            for (size_t i = 0; i < size_val; i++)
-                printf("%i: %i\n",i, data[i]);
+        if (!stack_.is_empty())
+            for (size_t i = 0; i < stack_.size_val; i++)
+                printf("%i: %i\n",i, stack_.data[i]);
         else printf("stack is empty\n");
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using out()");
     }
 }
 
-void stack::sin_int()
+void CPU::sin_int()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (!is_empty())
+        if (!stack_.is_empty())
             push(sin(pop()));
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using sin_int()");
     }
 }
 
-void stack::cos_int()
+void CPU::cos_int()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (!is_empty())
+        if (!stack_.is_empty())
             push(cos(pop()));
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using cos_int()");
     }
 }
 
-void stack::sqrt_int()
+void CPU::sqrt_int()
 {
-    if (ok())
+    if (stack_.ok())
     {
-        if (!is_empty())
+        if (!stack_.is_empty())
             push(sqrt(pop()));
     }
     else
     {
-        dump();
+        stack_.dump();
         ERRORPRINT("error at the stage of using sqrt_int()");
     }
 }
